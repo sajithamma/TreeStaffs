@@ -33,8 +33,11 @@ if not API_KEY:
 if not API_KEY:
     st.info("Set your OpenAI key in a `.env` file as `OPENAI_API_KEY=...` (or in Streamlit Secrets).", icon="🔑")
 
-os.environ["OPENAI_API_KEY"] = API_KEY or ""
-client = OpenAI() if API_KEY else None
+if API_KEY:
+    os.environ["OPENAI_API_KEY"] = API_KEY
+    client = OpenAI()
+else:
+    client = None
 
 # ---------- IMPROVED PROMPTS ----------
 SYSTEM_PROMPT = """You are a specialized data analyst for construction and manpower management.
@@ -116,8 +119,26 @@ def read_excel_all_sheets(file_bytes: bytes) -> Dict[str, pd.DataFrame]:
     data = {}
     for sheet in xls.sheet_names:
         try:
-            df = pd.read_excel(xls, sheet_name=sheet, header=None)
-            df = clean_dataframe(df)
+            # First try to read with header to preserve column names
+            try:
+                df = pd.read_excel(xls, sheet_name=sheet)
+                if st.session_state.get('debug_mode', False):
+                    st.write(f"📊 **Sheet '{sheet}' loaded with header:**")
+                    st.write(f"   Shape: {df.shape}")
+                    st.write(f"   Columns: {list(df.columns)}")
+                    st.write(f"   First 3 rows:")
+                    st.write(df.head(3))
+            except:
+                # Fallback to no header if that fails
+                df = pd.read_excel(xls, sheet_name=sheet, header=None)
+                df = clean_dataframe(df)
+                if st.session_state.get('debug_mode', False):
+                    st.write(f"📊 **Sheet '{sheet}' loaded without header:**")
+                    st.write(f"   Shape: {df.shape}")
+                    st.write(f"   Columns: {list(df.columns)}")
+                    st.write(f"   First 3 rows:")
+                    st.write(df.head(3))
+            
             if not df.empty and len(df.columns) >= 2:
                 data[sheet] = df
         except Exception as e:
@@ -184,62 +205,59 @@ def classify_columns_with_gpt(sheet_name: str, sample: Dict[str, Any], model: st
     data.setdefault("reason", "")
     return data
 
-def pick_first_nonempty(values: List[Any]) -> str:
-    for v in values:
-        s = str(v).strip()
-        if s and s.lower() not in {"nan", "none"}:
-            return s
-    return ""
+# Removed unused helper functions - simplified extraction approach
 
-def assemble_name(row: pd.Series, name_cols: List[str]) -> str:
-    parts = [str(row[c]).strip() for c in name_cols if c in row and pd.notna(row[c]) and str(row[c]).strip()]
-    # combine first/last if present
-    return " ".join(parts).strip()
-
-def assemble_role(row: pd.Series, role_cols: List[str]) -> str:
-    parts = [str(row[c]).strip() for c in role_cols if c in row and pd.notna(row[c]) and str(row[c]).strip()]
-    # Prefer first non-empty if they're redundant; else join
-    return parts[0] if len(parts) == 1 else " / ".join(parts)
-
-def looks_like_person_name(s: str) -> bool:
-    s = s.strip()
-    if not s:
-        return False
-    # basic heuristic to filter obvious non-names
-    bad_tokens = ["company", "llc", "l.l.c", "ltd", "pvt", "private", "department", "unit", "contract", "scope", "project", "site"]
-    if any(bt in s.lower() for bt in bad_tokens):
-        return False
-    # names often have letters and at least one space
-    letters = sum(ch.isalpha() for ch in s)
-    return letters >= 3
-
-def looks_like_role(s: str) -> bool:
-    s = s.strip()
-    if not s:
-        return False
-    # common construction job titles
-    maybe_roles = [
-        "engineer", "supervisor", "foreman", "manager", "mason", "carpenter", "electrician", "plumber", "technician",
-        "operator", "driver", "architect", "qa/qc", "qs", "draftsman", "safety", "helper", "labor", "mechanic",
-        "site", "civil", "steel fixer", "welder", "painter", "inspector", "coordinator", "administrator", "secretary",
-        "project", "structural", "mechanical", "electrical", "instrumentation", "hvac", "survey", "storekeeper",
-        "charge hand", "team lead", "document controller", "project engineer", "project manager"
-    ]
-    return any(tok in s.lower() for tok in maybe_roles)
+# Removed complex validation functions - we now extract all data directly
 
 def extract_from_sheet(df: pd.DataFrame, name_cols: List[str], role_cols: List[str]) -> pd.DataFrame:
+    """
+    Simple extraction: get all data from name and role columns, combine into a single dataframe
+    """
     subset_cols = [c for c in name_cols + role_cols if c in df.columns]
+    if st.session_state.get('debug_mode', False):
+        st.write(f"🔍 **Column matching debug:**")
+        st.write(f"   AI identified name_cols: {name_cols}")
+        st.write(f"   AI identified role_cols: {role_cols}")
+        st.write(f"   DataFrame columns: {list(df.columns)}")
+        st.write(f"   Subset columns found: {subset_cols}")
+        st.write(f"   Missing columns: {[c for c in name_cols + role_cols if c not in df.columns]}")
+    
     if not subset_cols:
+        if st.session_state.get('debug_mode', False):
+            st.write(f"❌ No subset columns found. name_cols: {name_cols}, role_cols: {role_cols}")
+            st.write(f"Available columns: {list(df.columns)}")
         return pd.DataFrame(columns=["Name", "Role"])
 
-    out_rows = []
-    for _, row in df[subset_cols].iterrows():
-        name = assemble_name(row, name_cols) if name_cols else ""
-        role = assemble_role(row, role_cols) if role_cols else ""
-        if name and role and looks_like_person_name(name) and looks_like_role(role):
-            out_rows.append({"Name": name, "Role": role})
+    if st.session_state.get('debug_mode', False):
+        st.write(f"✅ Found subset columns: {subset_cols}")
 
-    return pd.DataFrame(out_rows)
+    # Extract the columns we need
+    extracted_data = df[subset_cols].copy()
+    
+    if st.session_state.get('debug_mode', False):
+        st.write(f"📊 Extracted data shape: {extracted_data.shape}")
+        st.write(f"📊 Sample extracted data:")
+        st.write(extracted_data.head(3))
+    
+    # Combine name columns into one "Name" column
+    if name_cols:
+        extracted_data["Name"] = extracted_data[name_cols].fillna("").astype(str).agg(" ".join, axis=1).str.strip()
+    
+    # Combine role columns into one "Role" column  
+    if role_cols:
+        extracted_data["Role"] = extracted_data[role_cols].fillna("").astype(str).agg(" ".join, axis=1).str.strip()
+    
+    # Keep only Name and Role columns, remove empty rows
+    result = extracted_data[["Name", "Role"]].copy()
+    result = result[(result["Name"] != "") & (result["Role"] != "")]
+    
+    if st.session_state.get('debug_mode', False):
+        st.write(f"🎯 Final result shape: {result.shape}")
+        if not result.empty:
+            st.write("🎯 Sample final result:")
+            st.write(result.head(3))
+    
+    return result
 
 def merge_and_clean(dfs: List[pd.DataFrame]) -> pd.DataFrame:
     if not dfs:
@@ -259,6 +277,8 @@ with st.sidebar:
     max_cols = st.slider("Max columns to sample per sheet", 5, 50, 25, help="Caps the number of columns the AI sees.")
     model = st.selectbox("OpenAI Model", ["gpt-4o"], index=0)
     show_sheet_logs = st.checkbox("Show per-sheet classification logs", value=True)
+    debug_mode = st.checkbox("Debug mode (show extraction details)", value=False)
+    st.session_state['debug_mode'] = debug_mode
     st.markdown("---")
     st.caption("Tip: To reduce token usage, keep columns/rows sampled modest.")
 
@@ -301,11 +321,49 @@ for i, (sheet_name, df) in enumerate(all_sheets.items(), start=1):
     if classification.get("is_relevant") and classification.get("name_columns") and classification.get("role_columns"):
         name_cols = classification["name_columns"]
         role_cols = classification["role_columns"]
+        
+        # Always show what AI identified (simple and clear)
+        st.write(f"📋 **{sheet_name}:** AI identified Name columns: `{name_cols}` | Role columns: `{role_cols}`")
+        
+        if debug_mode:
+            st.write(f"🔍 **Debug for {sheet_name}:**")
+            st.write(f"DataFrame columns: {list(df.columns)}")
+            st.write(f"DataFrame shape: {df.shape}")
+            st.write(f"DataFrame info:")
+            st.write(df.info())
+            st.write(f"First few rows of data:")
+            st.write(df.head(5))
+            st.write(f"Column types:")
+            st.write(df.dtypes)
+            st.write(f"Checking if columns exist:")
+            for col in name_cols + role_cols:
+                exists = col in df.columns
+                st.write(f"   '{col}' exists: {exists}")
+                if exists:
+                    st.write(f"   '{col}' sample values: {df[col].head(3).tolist()}")
+                else:
+                    st.write(f"   Similar columns: {[c for c in df.columns if col.lower() in c.lower() or c.lower() in col.lower()]}")
+        
         chunk = extract_from_sheet(df, name_cols, role_cols)
+        
+        if debug_mode:
+            st.write(f"Extracted {len(chunk)} rows from {sheet_name}")
+            if not chunk.empty:
+                st.write("Sample extracted data:")
+                st.write(chunk.head(3))
+            else:
+                st.write("⚠️ **No data extracted!** Let's see why:")
+                st.write(f"DataFrame shape: {df.shape}")
+                st.write(f"Sample data from name columns: {df[name_cols].head(3) if name_cols else 'No name columns'}")
+                st.write(f"Sample data from role columns: {df[role_cols].head(3) if role_cols else 'No role columns'}")
+        
         if not chunk.empty:
             # attach sheet for traceability
             chunk["__sheet__"] = sheet_name
             extracted_chunks.append(chunk)
+            st.write(f"✅ **Successfully extracted {len(chunk)} rows from {sheet_name}**")
+        else:
+            st.write(f"❌ **No data extracted from {sheet_name}**")
 
     if show_sheet_logs:
         with st.expander(f"🔎 {sheet_name} — Relevance: {classification.get('is_relevant')}"):
@@ -315,11 +373,19 @@ for i, (sheet_name, df) in enumerate(all_sheets.items(), start=1):
 
     progress.progress(i / len(all_sheets))
 
+st.write(f"📊 **Extraction Summary:** Total chunks collected: {len(extracted_chunks)}")
+for i, chunk in enumerate(extracted_chunks):
+    st.write(f"   Chunk {i+1}: {len(chunk)} rows from sheet '{chunk['__sheet__'].iloc[0]}'")
+
 merged = merge_and_clean(extracted_chunks)
 
 st.subheader("✅ Consolidated People (Name & Role)")
 if merged.empty:
     st.warning("No rows extracted. Either the workbook lacks name/role info or the sampling missed them. Try increasing rows/columns sampled.")
+    st.write(f"🔍 **Debug info:** extracted_chunks length: {len(extracted_chunks)}")
+    if extracted_chunks:
+        st.write("First chunk sample:")
+        st.write(extracted_chunks[0].head(3))
 else:
     # Light editor so you can quickly fix typos before download
     edited = st.data_editor(
