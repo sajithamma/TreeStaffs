@@ -22,6 +22,317 @@ st.set_page_config(
 # Load OpenAI API key from the environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+def generate_html_org_chart(hierarchy_data):
+    """
+    Generate an HTML-based organizational chart from the hierarchy data.
+    Creates role-based nodes with people inside, arranged hierarchically.
+    """
+    # Group people by role
+    role_groups = {}
+    for person, data in hierarchy_data.items():
+        role = data["role"]
+        if role not in role_groups:
+            role_groups[role] = []
+        role_groups[role].append(person)
+    
+    # Build role hierarchy (which role reports to which role)
+    role_hierarchy = {}
+    for person, data in hierarchy_data.items():
+        role = data["role"]
+        reports_to_person = data["reports_to"]
+        
+        if reports_to_person:
+            # Find the role of the person they report to
+            reports_to_role = hierarchy_data[reports_to_person]["role"]
+            role_hierarchy[role] = reports_to_role
+        else:
+            role_hierarchy[role] = None
+    
+    # Find root roles (roles with no parent)
+    root_roles = [role for role, parent in role_hierarchy.items() if parent is None]
+    
+    # Build the HTML
+    html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizational Chart</title>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        
+        .org-chart {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }}
+        
+        .level {{
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }}
+        
+        .node {{
+            background: white;
+            border: 2px solid #4a90e2;
+            border-radius: 12px;
+            padding: 15px;
+            min-width: 200px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            position: relative;
+        }}
+        
+        .node:hover {{
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }}
+        
+        .node.role-node {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #4a90e2;
+        }}
+        
+        .node.role-node .role-title {{
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+        }}
+        
+        .people-list {{
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }}
+        
+        .person {{
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+            border-left: 4px solid #4a90e2;
+        }}
+        
+        .connection-line {{
+            position: absolute;
+            background: #4a90e2;
+            width: 2px;
+            height: 20px;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }}
+        
+        .connection-line.horizontal {{
+            width: 30px;
+            height: 2px;
+            bottom: auto;
+            top: 50%;
+            transform: translateY(-50%);
+        }}
+        
+        .connection-line.horizontal.left {{
+            right: 100%;
+            left: auto;
+        }}
+        
+        .connection-line.horizontal.right {{
+            left: 100%;
+            right: auto;
+        }}
+        
+        .level-label {{
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }}
+        
+        .chart-title {{
+            color: white;
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }}
+        
+        .stats {{
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            color: white;
+            text-align: center;
+        }}
+        
+        .stats h3 {{
+            margin: 0 0 15px 0;
+            font-size: 20px;
+        }}
+        
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }}
+        
+        .stat-item {{
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }}
+        
+        .stat-number {{
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+        }}
+        
+        .stat-label {{
+            font-size: 14px;
+            opacity: 0.9;
+        }}
+    </style>
+</head>
+<body>
+    <div class="chart-title">🏢 Organizational Chart</div>
+    
+    <div class="stats">
+        <h3>📊 Organization Statistics</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">{len(hierarchy_data)}</div>
+                <div class="stat-label">Total People</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{len(role_groups)}</div>
+                <div class="stat-label">Unique Roles</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{len(root_roles)}</div>
+                <div class="stat-label">Top Level Roles</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{max(len(people) for people in role_groups.values()) if role_groups else 0}</div>
+                <div class="stat-label">Largest Team</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="org-chart">
+"""
+    
+    # Generate levels based on hierarchy depth
+    levels = build_hierarchy_levels(role_hierarchy, root_roles)
+    
+    for level_num, level_roles in enumerate(levels):
+        html_content += f'        <div class="level-label">Level {level_num + 1}</div>\n'
+        html_content += '        <div class="level">\n'
+        
+        for role in level_roles:
+            people = role_groups.get(role, [])
+            html_content += f'            <div class="node role-node">\n'
+            html_content += f'                <div class="role-title">{role}</div>\n'
+            html_content += '                <div class="people-list">\n'
+            
+            for person in people:
+                html_content += f'                    <div class="person">{person}</div>\n'
+            
+            html_content += '                </div>\n'
+            
+            # Add connection line if not at root level
+            if level_num > 0:
+                html_content += '                <div class="connection-line"></div>\n'
+            
+            html_content += '            </div>\n'
+        
+        html_content += '        </div>\n'
+    
+    html_content += """
+    </div>
+    
+    <script>
+        // Add some interactive features
+        document.querySelectorAll('.node').forEach(node => {
+            node.addEventListener('click', function() {
+                this.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 200);
+            });
+        });
+        
+        // Add smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+"""
+    
+    return html_content
+
+def build_hierarchy_levels(role_hierarchy, root_roles):
+    """
+    Build hierarchical levels based on role hierarchy.
+    Returns a list of lists, where each inner list contains roles at that level.
+    """
+    levels = [root_roles]
+    processed_roles = set(root_roles)
+    
+    while True:
+        next_level = []
+        for role in levels[-1]:
+            # Find all roles that report to this role
+            for child_role, parent_role in role_hierarchy.items():
+                if parent_role == role and child_role not in processed_roles:
+                    next_level.append(child_role)
+                    processed_roles.add(child_role)
+        
+        if not next_level:
+            break
+        
+        levels.append(next_level)
+    
+    return levels
+
+def save_html_chart(hierarchy_data, filename="org_chart.html"):
+    """
+    Save the HTML organizational chart to a file.
+    """
+    html_content = generate_html_org_chart(hierarchy_data)
+    
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    return filename
+
 def get_role_hierarchy_from_ai(unique_roles):
     """
     Calls the OpenAI API to infer the organizational hierarchy of roles.
@@ -193,6 +504,21 @@ if uploaded_file is not None:
                 # Draw and display the chart
                 org_chart = draw_org_chart(full_hierarchy_data)
                 st.graphviz_chart(org_chart)
+                
+                # Generate and display HTML chart
+                st.subheader("HTML Organizational Chart")
+                html_content = generate_html_org_chart(full_hierarchy_data)
+                
+                # Display HTML in an iframe or provide download
+                st.components.v1.html(html_content, height=800, scrolling=True)
+                
+                # Download button for HTML file
+                st.download_button(
+                    label="⬇️ Download HTML Chart",
+                    data=html_content,
+                    file_name="organizational_chart.html",
+                    mime="text/html"
+                )
                 
                 st.markdown("---")
                 st.subheader("Inferred Hierarchy Data (JSON)")
