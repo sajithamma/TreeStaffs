@@ -21,31 +21,43 @@ st.caption("Uploads an Excel with many tabs, uses GPT-4o to detect Name & Role c
 load_dotenv()  # loads .env if present
 
 # You can set OPENAI_API_KEY in either .env or Streamlit Secrets
-API_KEY = os.getenv("OPENAI_API_KEY", st.secrets.get("OPENAI_API_KEY", ""))
+API_KEY = os.getenv("OPENAI_API_KEY", "")
+if not API_KEY:
+    # Try to get from Streamlit secrets if available
+    try:
+        API_KEY = st.secrets.get("OPENAI_API_KEY", "")
+    except FileNotFoundError:
+        # No secrets file found, continue with empty API key
+        pass
+
 if not API_KEY:
     st.info("Set your OpenAI key in a `.env` file as `OPENAI_API_KEY=...` (or in Streamlit Secrets).", icon="🔑")
 
 os.environ["OPENAI_API_KEY"] = API_KEY or ""
 client = OpenAI() if API_KEY else None
 
-# ---------- PROMPTS ----------
-SYSTEM_PROMPT = """You are a meticulous data labeling expert.
-Your task: from a tiny sample of an Excel sheet (top values per column), decide:
+# ---------- IMPROVED PROMPTS ----------
+SYSTEM_PROMPT = """You are a specialized data analyst for construction and manpower management.
+Your task: from a sample of an Excel sheet (headers + top values per column), determine:
 1) Is this sheet relevant for extracting a list of people (humans) and their job roles?
-2) Exactly which column(s) are "name" columns (people’s names).
-3) Exactly which column(s) are "role" columns (job titles/roles).
+2) Exactly which column(s) contain person names.
+3) Exactly which column(s) contain job roles/positions.
+
+CONSTRUCTION INDUSTRY CONTEXT:
+- This is typically for construction projects, manpower planning, or workforce management
+- Names: Employee names, worker names, staff names (often full names with initials)
+- Roles: Construction job titles like Engineer, Supervisor, Foreman, Mason, Carpenter, Electrician, etc.
 
 CRITICAL RULES:
-- Base your decision ONLY on the provided headers and sample values (not on assumptions).
-- Consider multilingual contexts (e.g., Arabic, Hindi/Urdu, English).
-- Names: typically proper names (often two words), may include initials, honorifics; avoid company/department names.
-- Roles: words like Engineer, Supervisor, Foreman, Manager, Electrician, Mason, Architect, Carpenter, Laborer, Operator, Technician, Driver, etc. Also accept synonyms like 'Job Role', 'Designation', 'Position', 'Title'.
-- EXCLUDE columns clearly not names/roles: ids, employee codes, phone/email, department, company, vendor, site name, dates, counts, rates, remarks/notes.
-- A sheet is RELEVANT only if it's plausible to contain human names AND associated roles (job titles) in some row alignment.
-- If there are multiple candidate name columns (e.g., First Name, Last Name), list them all under name_columns.
-- If there are multiple role columns (e.g., Role + Sub-role), list them all under role_columns.
-- If not relevant, set name_columns and role_columns to [] and is_relevant=false.
-- Respond strictly as JSON in the schema below.
+- Base decisions ONLY on provided headers and sample values
+- Consider multilingual contexts (Arabic, Hindi/Urdu, English, etc.)
+- Names: Look for columns with proper names (2+ words), may include initials, honorifics
+- Roles: Look for job titles, designations, positions (e.g., 'Job Role', 'Role', 'Designation', 'Position', 'Title')
+- EXCLUDE: IDs, codes, phone/email, department, company, vendor, site name, dates, counts, rates, remarks
+- A sheet is RELEVANT if it plausibly contains human names AND associated roles in aligned rows
+- Handle multiple name columns (e.g., First Name + Last Name) by listing all under name_columns
+- Handle multiple role columns by listing all under role_columns
+- If not relevant, set name_columns and role_columns to [] and is_relevant=false
 
 Return JSON in EXACT schema:
 {
@@ -53,7 +65,7 @@ Return JSON in EXACT schema:
   "is_relevant": <true|false>,
   "name_columns": ["<exact header from sample>", ...],
   "role_columns": ["<exact header from sample>", ...],
-  "reason": "<one concise sentence>"
+  "reason": "<one concise sentence explaining the decision>"
 }
 """
 
@@ -65,7 +77,7 @@ def build_user_prompt(sheet_name: str, sample: Dict[str, Any]) -> str:
     """
     return json.dumps(
         {
-            "instruction": "Classify which columns are person names and which are job roles.",
+            "instruction": "Classify which columns are person names and which are job roles for construction/manpower data.",
             "sheet_name": sheet_name,
             "columns": [
                 {
@@ -78,16 +90,38 @@ def build_user_prompt(sheet_name: str, sample: Dict[str, Any]) -> str:
         ensure_ascii=False
     )
 
-# ---------- HELPERS ----------
+# ---------- IMPROVED HELPERS ----------
+def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean and preprocess the dataframe to handle common Excel issues.
+    """
+    # Remove completely empty rows and columns
+    df = df.dropna(how='all').dropna(axis=1, how='all')
+    
+    # Clean column names - remove extra spaces and normalize
+    df.columns = [str(col).strip() for col in df.columns]
+    
+    # Try to find the first row with actual data (skip header rows)
+    for i in range(min(5, len(df))):
+        row = df.iloc[i]
+        if any(str(val).strip() and str(val).lower() not in ['nan', 'none', ''] for val in row):
+            # This row has data, use it as starting point
+            df = df.iloc[i:].reset_index(drop=True)
+            break
+    
+    return df
+
 def read_excel_all_sheets(file_bytes: bytes) -> Dict[str, pd.DataFrame]:
     xls = pd.ExcelFile(io.BytesIO(file_bytes))
     data = {}
     for sheet in xls.sheet_names:
         try:
-            df = pd.read_excel(xls, sheet_name=sheet)
-            data[sheet] = df
-        except Exception:
-            # Skip sheets that fail to parse
+            df = pd.read_excel(xls, sheet_name=sheet, header=None)
+            df = clean_dataframe(df)
+            if not df.empty and len(df.columns) >= 2:
+                data[sheet] = df
+        except Exception as e:
+            st.warning(f"Could not read sheet '{sheet}': {str(e)}")
             continue
     return data
 
@@ -120,27 +154,28 @@ def classify_columns_with_gpt(sheet_name: str, sample: Dict[str, Any], model: st
 
     user_prompt = build_user_prompt(sheet_name, sample)
 
-    resp = client.chat.completions.create(
-        model=model,
-        temperature=0,
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
-    content = resp.choices[0].message.content
     try:
+        resp = client.chat.completions.create(
+            model=model,
+            temperature=0,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        content = resp.choices[0].message.content
         data = json.loads(content)
-    except json.JSONDecodeError:
-        # Fallback: mark not relevant if JSON fails
+    except (json.JSONDecodeError, Exception) as e:
+        # Fallback: mark not relevant if JSON fails or API call fails
         data = {
             "sheet_name": sheet_name,
             "is_relevant": False,
             "name_columns": [],
             "role_columns": [],
-            "reason": "Model returned invalid JSON."
+            "reason": f"Error processing sheet: {str(e)}"
         }
+    
     # normalize fields
     data.setdefault("sheet_name", sheet_name)
     data.setdefault("is_relevant", False)
@@ -163,7 +198,7 @@ def assemble_name(row: pd.Series, name_cols: List[str]) -> str:
 
 def assemble_role(row: pd.Series, role_cols: List[str]) -> str:
     parts = [str(row[c]).strip() for c in role_cols if c in row and pd.notna(row[c]) and str(row[c]).strip()]
-    # Prefer first non-empty if they’re redundant; else join
+    # Prefer first non-empty if they're redundant; else join
     return parts[0] if len(parts) == 1 else " / ".join(parts)
 
 def looks_like_person_name(s: str) -> bool:
@@ -171,7 +206,7 @@ def looks_like_person_name(s: str) -> bool:
     if not s:
         return False
     # basic heuristic to filter obvious non-names
-    bad_tokens = ["company", "llc", "l.l.c", "ltd", "pvt", "private", "department", "unit", "contract", "scope"]
+    bad_tokens = ["company", "llc", "l.l.c", "ltd", "pvt", "private", "department", "unit", "contract", "scope", "project", "site"]
     if any(bt in s.lower() for bt in bad_tokens):
         return False
     # names often have letters and at least one space
@@ -182,12 +217,13 @@ def looks_like_role(s: str) -> bool:
     s = s.strip()
     if not s:
         return False
-    # common construction / generic titles
+    # common construction job titles
     maybe_roles = [
-        "engineer","supervisor","foreman","manager","mason","carpenter","electrician","plumber","technician",
-        "operator","driver","architect","qa/qc","qs","draftsman","safety","helper","labor","mechanic",
-        "site","civil","steel fixer","welder","painter","inspector","coordinator","administrator","secretary",
-        "project","structural","mechanical","electrical","instrumentation","hvac","survey","storekeeper"
+        "engineer", "supervisor", "foreman", "manager", "mason", "carpenter", "electrician", "plumber", "technician",
+        "operator", "driver", "architect", "qa/qc", "qs", "draftsman", "safety", "helper", "labor", "mechanic",
+        "site", "civil", "steel fixer", "welder", "painter", "inspector", "coordinator", "administrator", "secretary",
+        "project", "structural", "mechanical", "electrical", "instrumentation", "hvac", "survey", "storekeeper",
+        "charge hand", "team lead", "document controller", "project engineer", "project manager"
     ]
     return any(tok in s.lower() for tok in maybe_roles)
 
@@ -231,7 +267,7 @@ uploaded = st.file_uploader("Upload your Excel (.xlsx)", type=["xlsx"])
 
 # Helper for local testing with a bundled file (optional)
 # Uncomment if you want a "Use sample file" button:
-# sample_path = "VIDA RESIDENCES-P110_MANPOWER LIST.xlsx"
+# sample_path = "sample.xlsx"
 # use_sample = st.button("Use sample file in app directory")
 
 if uploaded is None:
