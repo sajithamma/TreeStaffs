@@ -205,6 +205,314 @@ def classify_columns_with_gpt(sheet_name: str, sample: Dict[str, Any], model: st
     data.setdefault("reason", "")
     return data
 
+# ---------- TREE BUILDING FUNCTIONS ----------
+def classify_role_with_ai(role: str, context: str = "") -> dict:
+    """
+    Use AI to classify a job role and determine its level in the hierarchy
+    """
+    if not client:
+        return {"level": "level3", "category": "general", "reports_to": "level2"}
+    
+    try:
+        prompt = f"""
+        Analyze this job role and determine its organizational level and category.
+        
+        Job Role: {role}
+        Context: {context}
+        
+        Classify the role into one of these levels (use the exact level names):
+        1. "level1" - Top level (CEO, Director, Project Manager, Owner)
+        2. "level2" - Middle level (Manager, Lead, Coordinator, Engineer)
+        3. "level3" - Individual contributor (Technician, Operator, Helper, Worker)
+        
+        And categorize it into one of these areas:
+        - "electrical" - Electrical work, wiring, etc.
+        - "plumbing" - Plumbing, mechanical, HVAC
+        - "construction" - General construction, masonry, carpentry
+        - "administrative" - Office, documentation, coordination
+        - "general" - Other roles
+        
+        Return JSON in this format:
+        {{
+            "level": "level1|level2|level3",
+            "category": "electrical|plumbing|construction|administrative|general",
+            "reports_to": "who this role typically reports to"
+        }}
+        """
+        
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            temperature=0,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": "You are an organizational structure expert. Analyze job roles and classify them accurately."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        
+        result = json.loads(response.choices[0].message.content)
+        return result
+    except Exception as e:
+        st.warning(f"AI classification failed for role '{role}': {str(e)}")
+        return {"level": "level3", "category": "general", "reports_to": "level2"}
+
+def suggest_level2_title(category: str) -> str:
+    """
+    Dynamically suggest a level2 title based on the category
+    """
+    if not client:
+        return f"{category.title()} Manager"
+    
+    try:
+        prompt = f"""
+        Suggest an appropriate middle-management title for a team working in the {category} category.
+        
+        Examples:
+        - electrical -> "Electrical Manager" or "Electrical Lead"
+        - plumbing -> "Plumbing Manager" or "Plumbing Coordinator"
+        - construction -> "Construction Manager" or "Site Manager"
+        - administrative -> "Administrative Manager" or "Office Manager"
+        
+        Return only the title, nothing else.
+        """
+        
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            temperature=0,
+            messages=[
+                {"role": "system", "content": "You are an HR expert who suggests appropriate job titles."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"{category.title()} Manager"
+
+def build_organization_tree(df: pd.DataFrame) -> dict:
+    """
+    Build organizational hierarchy from the extracted data - completely dynamic
+    """
+    if df.empty:
+        return None
+    
+    # Process roles in batches to avoid long context
+    batch_size = 50
+    role_classifications = {}
+    
+    st.write("🔍 **Classifying job roles with AI...**")
+    
+    # Process roles in batches
+    for i in range(0, len(df), batch_size):
+        batch = df.iloc[i:i+batch_size]
+        st.write(f"   Processing batch {i//batch_size + 1} ({len(batch)} roles)...")
+        
+        for _, row in batch.iterrows():
+            role = row['Role']
+            name = row['Name']
+            
+            if role not in role_classifications:
+                # Get AI classification for this role
+                classification = classify_role_with_ai(role, f"Person: {name}")
+                role_classifications[role] = classification
+    
+    st.write("✅ **Role classification complete!**")
+    
+    # Build the tree structure dynamically
+    tree = {
+        "name": "Organization",
+        "type": "root",
+        "children": []
+    }
+    
+    # Group people by their classified levels
+    level1_people = []
+    level2_people = []
+    level3_people = []
+    
+    for _, row in df.iterrows():
+        role = row['Role']
+        name = row['Name']
+        classification = role_classifications.get(role, {"level": "level3", "category": "general"})
+        
+        person_data = {
+            "name": name,
+            "role": role,
+            "type": classification["level"],
+            "category": classification["category"]
+        }
+        
+        if classification["level"] == "level1":
+            level1_people.append(person_data)
+        elif classification["level"] == "level2":
+            level2_people.append(person_data)
+        else:
+            level3_people.append(person_data)
+    
+    # Add level1 people to root
+    for level1_person in level1_people:
+        tree["children"].append({
+            "name": level1_person["name"],
+            "role": level1_person["role"],
+            "type": "level1",
+            "category": level1_person["category"],
+            "children": []
+        })
+    
+    # Group level2 people by category and create dynamic hierarchy
+    level2_groups = {}
+    for level2_person in level2_people:
+        category = level2_person["category"]
+        if category not in level2_groups:
+            level2_groups[category] = []
+        level2_groups[category].append(level2_person)
+    
+    # Add level2 people and their level3 subordinates
+    for category, category_level2 in level2_groups.items():
+        for level2_person in category_level2:
+            level2_node = {
+                "name": level2_person["name"],
+                "role": level2_person["role"],
+                "type": "level2",
+                "category": category,
+                "children": []
+            }
+            
+            # Add level3 people under this level2 person
+            for level3_person in level3_people:
+                if level3_person["category"] == category:
+                    level3_node = {
+                        "name": level3_person["name"],
+                        "role": level3_person["role"],
+                        "type": "level3",
+                        "category": category
+                    }
+                    level2_node["children"].append(level3_node)
+            
+            tree["children"].append(level2_node)
+    
+    # Handle remaining level3 people - create dynamic level2 nodes
+    remaining_level3 = [p for p in level3_people if not any(p["category"] == l2["category"] for l2 in level2_people)]
+    if remaining_level3:
+        # Group remaining level3 people by category
+        level3_categories = {}
+        for level3_person in remaining_level3:
+            category = level3_person["category"]
+            if category not in level3_categories:
+                level3_categories[category] = []
+            level3_categories[category].append(level3_person)
+        
+        # Create level2 nodes for each category
+        for category, category_level3 in level3_categories.items():
+            level2_title = suggest_level2_title(category)
+            
+            dynamic_level2 = {
+                "name": level2_title,
+                "role": level2_title,
+                "type": "level2",
+                "category": category,
+                "children": []
+            }
+            
+            for level3_person in category_level3:
+                level3_node = {
+                    "name": level3_person["name"],
+                    "role": level3_person["role"],
+                    "type": "level3",
+                    "category": category
+                }
+                dynamic_level2["children"].append(level3_node)
+            
+            tree["children"].append(dynamic_level2)
+    
+    return tree
+
+def tree_to_excel_bytes(tree_data: dict) -> bytes:
+    """
+    Convert tree structure to Excel format with hierarchical layout
+    """
+    buffer = io.BytesIO()
+    
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        # Create hierarchical structure
+        rows = []
+        
+        def add_node_to_rows(node, level=0, path=""):
+            indent = "  " * level
+            if level == 0:
+                rows.append([indent + node["name"], "Organization", level])
+            else:
+                rows.append([indent + node["name"], node.get("role", ""), level])
+            
+            if "children" in node and node["children"]:
+                for child in node["children"]:
+                    add_node_to_rows(child, level + 1, path + "/" + node["name"])
+        
+        add_node_to_rows(tree_data)
+        
+        # Create DataFrame
+        df = pd.DataFrame(rows, columns=["Name", "Role", "Level"])
+        
+        # Write to Excel
+        df.to_excel(writer, sheet_name="Organization Tree", index=False)
+        
+        # Auto-adjust column widths
+        worksheet = writer.sheets["Organization Tree"]
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+    
+    buffer.seek(0)
+    return buffer.read()
+
+def display_organization_tree(tree_data: dict):
+    """
+    Display the organizational tree in a hierarchical format
+    """
+    st.subheader("🏢 Organizational Structure")
+    
+    # Display tree structure
+    def display_node(node, level=0):
+        indent = "  " * level
+        icon = "👑" if node["type"] == "level1" else "👨‍💼" if node["type"] == "level2" else "👷"
+        
+        if level == 0:
+            st.markdown(f"**{icon} {node['name']}**")
+        else:
+            st.markdown(f"{indent}{icon} **{node['name']}** - {node['role']}")
+        
+        if "children" in node and node["children"]:
+            for child in node["children"]:
+                display_node(child, level + 1)
+    
+    display_node(tree_data)
+    
+    # Download tree as JSON
+    tree_json = json.dumps(tree_data, indent=2, ensure_ascii=False)
+    st.download_button(
+        label="⬇️ Download Tree Structure (JSON)",
+        data=tree_json,
+        file_name="organization_tree.json",
+        mime="application/json"
+    )
+    
+    # Download tree as Excel with hierarchical structure
+    excel_bytes = tree_to_excel_bytes(tree_data)
+    st.download_button(
+        label="⬇️ Download Tree Structure (Excel)",
+        data=excel_bytes,
+        file_name="organization_tree.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 # Removed unused helper functions - simplified extraction approach
 
 # Removed complex validation functions - we now extract all data directly
@@ -419,6 +727,20 @@ else:
         file_name="people_name_role.csv",
         mime="text/csv"
     )
+
+# ---------- TREE STRUCTURE BUILDER ----------
+if not merged.empty:
+    st.markdown("---")
+    st.subheader("🌳 Organization Tree Builder")
+    
+    if st.button("🔧 Build Organization Tree", type="primary"):
+        with st.spinner("Building organizational hierarchy..."):
+            tree_data = build_organization_tree(merged)
+            if tree_data:
+                st.success("✅ Organization tree built successfully!")
+                display_organization_tree(tree_data)
+            else:
+                st.error("❌ Failed to build organization tree")
 
 st.markdown("---")
 st.caption("Built with Streamlit + pandas + OpenAI GPT-4o. The model only sees a small sample (top N values per column) to judge column semantics, then the app extracts full rows for selected columns.")
