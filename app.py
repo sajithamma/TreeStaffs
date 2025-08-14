@@ -420,5 +420,346 @@ else:
         mime="text/csv"
     )
 
+# ---------- AI-POWERED ORGANIZATIONAL HIERARCHY BUILDER ----------
+def build_ai_organization_tree(df: pd.DataFrame) -> dict:
+    """
+    Build organizational hierarchy using AI to infer direct reporting relationships
+    """
+    if df.empty:
+        return None
+    
+    st.write("🔍 **Building AI-powered organizational hierarchy...**")
+    
+    # Create a clean representation of the data for AI analysis
+    data_string = df.to_csv(index=False)
+    
+    st.write(f"📊 Analyzing {len(df)} people with {df['Role'].nunique()} unique roles")
+    
+    # Use AI to infer the hierarchy directly
+    hierarchy_data = infer_hierarchy_from_ai(df, data_string)
+    
+    if hierarchy_data:
+        # Convert the flat hierarchy to a tree structure
+        org_tree = convert_hierarchy_to_tree(hierarchy_data)
+        return org_tree
+    else:
+        return None
+
+def infer_hierarchy_from_ai(df: pd.DataFrame, data_string: str) -> dict:
+    """
+    Use AI to infer the organizational hierarchy from the consolidated data
+    """
+    if not client:
+        st.warning("OpenAI client not available. Using fallback hierarchy.")
+        return create_fallback_hierarchy(df)
+    
+    try:
+        prompt = f"""
+        You are an expert at inferring organizational hierarchy from a list of names and roles.
+        Based on the following CSV data, identify the reporting structure.
+        
+        A person reports to another if their role is less senior (e.g., 'Electrician' reports to 'Ele Chargehand', 'Ele Chargehand' reports to 'Ele Supervisor').
+        
+        The data is as follows:
+        ---
+        {data_string}
+        ---
+        
+        Please provide the output as a JSON object where the key is the person's name and the value is an object containing their 'role' and the 'reports_to' field. The 'reports_to' field should contain the name of their direct manager. If a person is at the top of the hierarchy (e.g., a supervisor, project manager), set 'reports_to' to null.
+        
+        Example format:
+        {{
+          "Ramesh Kumar Krishnappa Bangera": {{
+            "role": "Ele Supervisor",
+            "reports_to": null
+          }},
+          "Murugan Karuppaiyan Karuppaiyan": {{
+            "role": "Ele Chargehand",
+            "reports_to": "Ramesh Kumar Krishnappa Bangera"
+          }},
+          "SAMSE ALAM KHAN": {{
+            "role": "Electrician",
+            "reports_to": "Murugan Karuppaiyan Karuppaiyan"
+          }}
+        }}
+        
+        Strictly provide only the JSON object, do not include any other text or explanation.
+        """
+        
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            temperature=0.0,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that infers organizational charts."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        
+        json_string = response.choices[0].message.content
+        st.success("✅ Hierarchy inferred successfully!")
+        
+        try:
+            return json.loads(json_string)
+        except json.JSONDecodeError as json_e:
+            st.error("The AI's response was not in the expected JSON format.")
+            st.code(json_string, language="json")
+            return None
+            
+    except Exception as e:
+        st.warning(f"AI inference failed: {str(e)}")
+        st.info("Using fallback hierarchy method...")
+        return create_fallback_hierarchy(df)
+
+def create_fallback_hierarchy(df: pd.DataFrame) -> dict:
+    """
+    Create a fallback hierarchy when AI is not available
+    """
+    st.write("🔧 **Creating fallback hierarchy...**")
+    
+    # Simple heuristic-based hierarchy
+    hierarchy = {}
+    
+    # Group by role and find supervisors
+    role_groups = df.groupby('Role')
+    
+    for role, group in role_groups:
+        people = group['Name'].tolist()
+        
+        # Simple rules for hierarchy
+        if any(keyword in role.lower() for keyword in ['supervisor', 'manager', 'project', 'chief', 'head']):
+            # Top level - no reports_to
+            for person in people:
+                hierarchy[person] = {
+                    "role": role,
+                    "reports_to": None
+                }
+        elif any(keyword in role.lower() for keyword in ['chargehand', 'charge hand', 'c/h', 'lead']):
+            # Middle level - find supervisor
+            supervisor = find_supervisor_for_role(role, df)
+            for person in people:
+                hierarchy[person] = {
+                    "role": role,
+                    "reports_to": supervisor
+                }
+        else:
+            # Worker level - find appropriate supervisor
+            supervisor = find_supervisor_for_role(role, df)
+            for person in people:
+                hierarchy[person] = {
+                    "role": role,
+                    "reports_to": supervisor
+                }
+    
+    return hierarchy
+
+def find_supervisor_for_role(role: str, df: pd.DataFrame) -> str:
+    """
+    Find a supervisor for a given role using simple heuristics
+    """
+    # Look for roles that might be supervisors
+    potential_supervisors = []
+    
+    for other_role in df['Role'].unique():
+        if other_role == role:
+            continue
+            
+        # Check if this role could be a supervisor
+        if any(keyword in other_role.lower() for keyword in ['supervisor', 'chargehand', 'charge hand', 'c/h']):
+            # Check if they're in the same functional area
+            if is_same_functional_area(role, other_role):
+                potential_supervisors.append(other_role)
+    
+    if potential_supervisors:
+        # Return the first person with this role
+        supervisor_role = potential_supervisors[0]
+        supervisor_person = df[df['Role'] == supervisor_role]['Name'].iloc[0]
+        return supervisor_person
+    
+    return None
+
+def is_same_functional_area(role1: str, role2: str) -> bool:
+    """
+    Check if two roles are in the same functional area
+    """
+    role1_lower = role1.lower()
+    role2_lower = role2.lower()
+    
+    # Electrical
+    if any(keyword in role1_lower for keyword in ['ele', 'electrical']) and \
+       any(keyword in role2_lower for keyword in ['ele', 'electrical']):
+        return True
+    
+    # Plumbing
+    if any(keyword in role1_lower for keyword in ['plumb', 'pipe']) and \
+       any(keyword in role2_lower for keyword in ['plumb', 'pipe']):
+        return True
+    
+    # HVAC/Ducting
+    if any(keyword in role1_lower for keyword in ['hvac', 'duct', 'ac']) and \
+       any(keyword in role2_lower for keyword in ['hvac', 'duct', 'ac']):
+        return True
+    
+    # General construction
+    if any(keyword in role1_lower for keyword in ['helper', 'worker', 'technician']) and \
+       any(keyword in role2_lower for keyword in ['helper', 'worker', 'technician']):
+        return True
+    
+    return False
+
+def convert_hierarchy_to_tree(hierarchy_data: dict) -> dict:
+    """
+    Convert the flat hierarchy data to a tree structure
+    """
+    st.write("🌳 **Converting hierarchy to tree structure...**")
+    
+    # Create the root node
+    tree = {
+        "name": "Organization",
+        "type": "root",
+        "children": []
+    }
+    
+    # Find root nodes (people with no reports_to)
+    root_people = [name for name, data in hierarchy_data.items() if data.get("reports_to") is None]
+    
+    # Build the tree structure
+    for root_person in root_people:
+        root_data = hierarchy_data[root_person]
+        root_node = {
+            "name": root_person,
+            "role": root_data["role"],
+            "type": "level1",
+            "children": []
+        }
+        
+        # Add children recursively
+        add_children_to_node(root_person, root_node, hierarchy_data)
+        tree["children"].append(root_node)
+    
+    # Add people count to each node
+    add_people_counts_to_tree(tree, hierarchy_data)
+    
+    return tree
+
+def add_children_to_node(parent_name: str, parent_node: dict, hierarchy_data: dict):
+    """
+    Recursively add children to a node
+    """
+    for person_name, person_data in hierarchy_data.items():
+        if person_data.get("reports_to") == parent_name:
+            child_node = {
+                "name": person_name,
+                "role": person_data["role"],
+                "type": "level2" if "supervisor" in person_data["role"].lower() else "level3",
+                "children": []
+            }
+            
+            # Add children recursively
+            add_children_to_node(person_name, child_node, hierarchy_data)
+            parent_node["children"].append(child_node)
+
+def add_people_counts_to_tree(tree: dict, hierarchy_data: dict):
+    """
+    Add people count and list to each node
+    """
+    def add_counts_to_node(node):
+        if node["name"] != "Organization":
+            # Count people with this role
+            role = node["role"]
+            people_with_role = [name for name, data in hierarchy_data.items() if data["role"] == role]
+            
+            node["people_count"] = len(people_with_role)
+            node["people"] = people_with_role
+        
+        # Recursively add to children
+        for child in node.get("children", []):
+            add_counts_to_node(child)
+    
+    add_counts_to_node(tree)
+
+def display_ai_organization_tree(tree_data: dict):
+    """
+    Display the AI-built organizational tree
+    """
+    st.subheader("🏢 AI-Built Organizational Structure")
+    
+    # Display tree structure
+    def display_node(node, level=0):
+        indent = "  " * level
+        icon = "👑" if node["type"] == "root" else "👨‍💼" if node["type"] == "level1" else "👷"
+        
+        if level == 0:
+            st.markdown(f"**{icon} {node['name']}**")
+        else:
+            people_count = node.get("people_count", 0)
+            people_list = node.get("people", [])
+            st.markdown(f"{indent}{icon} **{node['name']}** - {node['role']} ({people_count} people)")
+            
+            if people_count > 0 and people_count <= 5:  # Show names for small teams
+                for person in people_list:
+                    st.markdown(f"{indent}  👤 {person}")
+            elif people_count > 5:
+                st.markdown(f"{indent}  👥 {people_list[0]}, {people_list[1]}, ... and {people_count-2} more")
+        
+        if "children" in node and node["children"]:
+            for child in node["children"]:
+                display_node(child, level + 1)
+    
+    display_node(tree_data)
+    
+    # Download tree as JSON
+    tree_json = json.dumps(tree_data, indent=2, ensure_ascii=False)
+    st.download_button(
+        label="⬇️ Download AI Tree Structure (JSON)",
+        data=tree_json,
+        file_name="ai_organization_tree.json",
+        mime="application/json"
+    )
+    
+    # Also provide the flat hierarchy format
+    flat_hierarchy = convert_tree_to_flat_hierarchy(tree_data)
+    flat_json = json.dumps(flat_hierarchy, indent=2, ensure_ascii=False)
+    st.download_button(
+        label="⬇️ Download Flat Hierarchy (JSON)",
+        data=flat_json,
+        file_name="flat_hierarchy.json",
+        mime="application/json"
+    )
+
+def convert_tree_to_flat_hierarchy(tree: dict) -> dict:
+    """
+    Convert tree structure back to flat hierarchy format
+    """
+    flat_hierarchy = {}
+    
+    def process_node(node, parent_name=None):
+        if node["name"] != "Organization":
+            flat_hierarchy[node["name"]] = {
+                "role": node["role"],
+                "reports_to": parent_name
+            }
+            
+            # Process children
+            for child in node.get("children", []):
+                process_node(child, node["name"])
+    
+    process_node(tree)
+    return flat_hierarchy
+
+# ---------- TREE STRUCTURE BUILDER ----------
+if not merged.empty:
+    st.markdown("---")
+    st.subheader("🌳 AI Organization Tree Builder")
+    
+    if st.button("🔧 Build AI Organization Tree", type="primary"):
+        with st.spinner("Building AI-powered organizational hierarchy..."):
+            tree_data = build_ai_organization_tree(merged)
+            if tree_data:
+                st.success("✅ AI organization tree built successfully!")
+                display_ai_organization_tree(tree_data)
+            else:
+                st.error("❌ Failed to build AI organization tree")
+
 st.markdown("---")
 st.caption("Built with Streamlit + pandas + OpenAI GPT-4o. The model only sees a small sample (top N values per column) to judge column semantics, then the app extracts full rows for selected columns.")

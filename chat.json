@@ -1,0 +1,494 @@
+{
+    "RAMESH KUMAR KRISHNAPPA BANGERA": {
+        "role": "Ele Supervisor",
+        "reports_to": null
+    },
+    "MURUGAN KARUPPAIYAN KARUPPAIYAN": {
+        "role": "Ele Chargehand",
+        "reports_to": "RAMESH KUMAR KRISHNAPPA BANGERA"
+    },
+    "KAMALRAJ KALYANASUNDARAM": {
+        "role": "Ele Chargehand",
+        "reports_to": "RAMESH KUMAR KRISHNAPPA BANGERA"
+    },
+    "ANANTHA KANI MUNIANDI MUNIANDI": {
+        "role": "Ele Chargehand",
+        "reports_to": "RAMESH KUMAR KRISHNAPPA BANGERA"
+    },
+    "SAMSE ALAM KHAN": {
+        "role": "Electrician",
+        "reports_to": "MURUGAN KARUPPAIYAN KARUPPAIYAN"
+    },
+    "RAJ KUMAR CHOURASIYA": {
+        "role": "Electrician",
+        "reports_to": "MURUGAN KARUPPAIYAN KARUPPAIYAN"
+    },
+    "PRAKASH CHANDRA BEHERA": {
+        "role": "Electrician",
+        "reports_to": "MURUGAN KARUPPAIYAN KARUPPAIYAN"
+    },
+    "CHANDRA VINAY BHARDWAJ": {
+        "role": "Electrician",
+        "reports_to": "MURUGAN KARUPPAIYAN KARUPPAIYAN"
+    },
+    "BALAMURUGAN BALASUBRAMANIYAN BALASUBRAMANIYAN": {
+        "role": "Electrician",
+        "reports_to": "KAMALRAJ KALYANASUNDARAM"
+    },
+    "BALAMURUGAN RAMASAMY": {
+        "role": "Electrician",
+        "reports_to": "KAMALRAJ KALYANASUNDARAM"
+    },
+    "MOHAMMAD ASLAM AZIZULLAH": {
+        "role": "Electrician",
+        "reports_to": "KAMALRAJ KALYANASUNDARAM"
+    },
+    "AMIT KUMAR SINGH BRIJ MOHAN": {
+        "role": "Electrician",
+        "reports_to": "KAMALRAJ KALYANASUNDARAM"
+    },
+    "LALLAN YADAV RAMDIN YADAV": {
+        "role": "Electrician",
+        "reports_to": "ANANTHA KANI MUNIANDI MUNIANDI"
+    },
+    "RAHUL KUMAR RADHESHYAM": {
+        "role": "Electrician",
+        "reports_to": "ANANTHA KANI MUNIANDI MUNIANDI"
+    },
+    "GULJAR HUSAN MD HABIBUR ROHMAN": {
+        "role": "Electrician",
+        "reports_to": "ANANTHA KANI MUNIANDI MUNIANDI"
+    },
+    "SONU PAL OMPRAKASH PAL": {
+        "role": "Electrician",
+        "reports_to": "ANANTHA KANI MUNIANDI MUNIANDI"
+    },
+    "GAYASUDIN SHEK": {
+        "role": "Ass Electrician",
+        "reports_to": "SAMSE ALAM KHAN"
+    },
+    "MOHAMMAD RAHIMUDDIN MOHAMMAD": {
+        "role": "Ass Electrician",
+        "reports_to": "SAMSE ALAM KHAN"
+    },
+    "ASHIF RAJA MD JALALUDDIN": {
+        "role": "Ass Electrician",
+        "reports_to": "SAMSE ALAM KHAN"
+    },
+    "NITESH KUMAR NAWAL SAH": {
+        "role": "Ass Electrician",
+        "reports_to": "SAMSE ALAM KHAN"
+    },
+    "RISHI MUNI YADAV": {
+        "role": "Ass Electrician",
+        "reports_to": "RAJ KUMAR CHOURASIYA"
+    },
+    "SAMSUDIN MIYA CHHOTADIN MIYA": {
+        "role": "Ass Electrician",
+        "reports_to": "RAJ KUMAR CHOURASIYA"
+    },
+    "SAMIM ANSARI SAUKAT ANSARI": {
+        "role": "Ass Electrician",
+        "reports_to": "RAJ KUMAR CHOURASIYA"
+    },
+    "MITHLESH CHAUHAN": {
+        "role": "Ass Electrician",
+        "reports_to": "RAJ KUMAR CHOURASIYA"
+    },
+    "AHMAD RAZA KHAN MOHAMMAD": {
+        "role": "Ass Electrician",
+        "reports_to": "PRAKASH CHANDRA BEHERA"
+    },
+    "HASHIBUL MANDAL": {
+        "role": "Electrician",
+        "reports_to": "PRAKASH CHANDRA BEHERA"
+    },
+    "BALASUBRAMANIYAN PITCHIAYA": {
+        "role": "Ass Electrician",
+        "reports_to": "PRAKASH CHANDRA BEHERA"
+    },
+    "NARENDRA MANJHI MISHRI MANJHI": {
+        "role": "Ass Electrician",
+        "reports_to": "PRAKASH CHANDRA BEHERA"
+    },
+    "DHIRAJ KUMAR SINGH": {
+        "role": "Ass Electrician",
+        "reports_to": "CHANDRA VINAY BHARDWAJ"
+    },
+    "AFZAL ALAM MOHAMMAD RUSTAM ALI": {
+        "role": "Ass Electrician",
+        "reports_to": "CHANDRA VINAY BHARDWAJ"
+    },
+    "MD SADDAM HUSSAIN": {
+        "role": "Ass Electrician",
+        "reports_to": "CHANDRA VINAY BHARDWAJ"
+    },
+    "IMROJ ALI SEKH NAUSHAD ALI": {
+        "role": "Ass Electrician",
+        "reports_to": "CHANDRA VINAY BHARDWAJ"
+    },
+    "IRSHAD HUSSAIN SHAHMAD HUSSAIN": {
+        "role": "Ass Electrician",
+        "reports_to": "BALAMURUGAN BALASUBRAMANIYAN BALASUBRAMANIYAN"
+    },
+    "GAURISHANKAR SAH SUBHASH SAH": {
+        "role": "Ass Electrician",
+        "reports_to": "BALAMURUGAN BALASUBRAMANIYAN BALASUBRAMANIYAN"
+    },
+    "DHEERAJ KUMAR MUNDRIKA MAHATO": {
+        "role": "Ass Electrician",
+        "reports_to": "BALAMURUGAN BALASUBRAMANIYAN BALASUBRAMANIYAN"
+    },
+    "KARAN KUMAR PRASAD HARIKISHUM PRASAD": {
+        "role": "Ass Electrician",
+        "reports_to": "BALAMURUGAN BALASUBRAMANIYAN BALASUBRAMANIYAN"
+    },
+    "VISHAL GOND UPENDRA GOND": {
+        "role": "Ass Electrician",
+        "reports_to": "BALAMURUGAN RAMASAMY"
+    },
+    "VIJENDRA KUMAR JAYRAM SAH": {
+        "role": "Ass Electrician",
+        "reports_to": "BALAMURUGAN RAMASAMY"
+    },
+    "MOHAMMAD ALLAUDDEEN MOHAMMAD": {
+        "role": "Ass Electrician",
+        "reports_to": "BALAMURUGAN RAMASAMY"
+    },
+    "MD SAFI ALAM MD MAKSOOD ANSARI": {
+        "role": "Ass Electrician",
+        "reports_to": "BALAMURUGAN RAMASAMY"
+    },
+    "MOHAMMAD SHAMSHER MOHAMMAD": {
+        "role": "Ass Electrician",
+        "reports_to": "MOHAMMAD ASLAM AZIZULLAH"
+    },
+    "ABHILASH KARUNAKARAN": {
+        "role": "WELDER",
+        "reports_to": null
+    },
+    "SUDHEESH KOTTELEVALAPPIL": {
+        "role": "Plumber Supervisor",
+        "reports_to": null
+    },
+    "CHELLAPANDI RENGASAMY RENGASAMY": {
+        "role": "Plumbing C/H",
+        "reports_to": "SUDHEESH KOTTELEVALAPPIL"
+    },
+    "SANTOSH KUMAR SWAIN SATRUGHAN": {
+        "role": "Plumbing C/H",
+        "reports_to": "SUDHEESH KOTTELEVALAPPIL"
+    },
+    "MUHAMMAD SABIR MUHAMMAD BAKHSH": {
+        "role": "Plumbing C/H",
+        "reports_to": "SUDHEESH KOTTELEVALAPPIL"
+    },
+    "UNNIKKANNAN NADARAJAN": {
+        "role": "Plumbing C/H",
+        "reports_to": "SUDHEESH KOTTELEVALAPPIL"
+    },
+    "KHURRAM NAVEED NAVEED AHMED MIR": {
+        "role": "PLUMBER",
+        "reports_to": "CHELLAPANDI RENGASAMY RENGASAMY"
+    },
+    "RASHID ALTAF MUHAMMED ALTAF": {
+        "role": "PLUMBER",
+        "reports_to": "CHELLAPANDI RENGASAMY RENGASAMY"
+    },
+    "ERIC SARFO": {
+        "role": "PLUMBER",
+        "reports_to": "CHELLAPANDI RENGASAMY RENGASAMY"
+    },
+    "SAHADEB JENA": {
+        "role": "PLUMBER",
+        "reports_to": "CHELLAPANDI RENGASAMY RENGASAMY"
+    },
+    "RAJ KISORE SWAIN BRAJA KISHORE SWAIN": {
+        "role": "PLUMBER",
+        "reports_to": "SANTOSH KUMAR SWAIN SATRUGHAN"
+    },
+    "PRASHANTA KUMAR BARICK": {
+        "role": "PLUMBER",
+        "reports_to": "SANTOSH KUMAR SWAIN SATRUGHAN"
+    },
+    "GUDDU RAHMAN AZIZUL RAHMAN": {
+        "role": "PLUMBER",
+        "reports_to": "SANTOSH KUMAR SWAIN SATRUGHAN"
+    },
+    "PRAKASH KUMAR JENA": {
+        "role": "ASST PLUMBER",
+        "reports_to": "KHURRAM NAVEED NAVEED AHMED MIR"
+    },
+    "JIBAN KUMAR MALIK": {
+        "role": "ASST PLUMBER",
+        "reports_to": "KHURRAM NAVEED NAVEED AHMED MIR"
+    },
+    "AHSAN ALI MUHAMMAD NAVEED": {
+        "role": "ASST PLUMBER",
+        "reports_to": "KHURRAM NAVEED NAVEED AHMED MIR"
+    },
+    "PRAMOD KUMAR NATHUNI MAHTO": {
+        "role": "ASST PLUMBER",
+        "reports_to": "KHURRAM NAVEED NAVEED AHMED MIR"
+    },
+    "ABID HUSSAIN AMIRUDDIN": {
+        "role": "ASST PLUMBER",
+        "reports_to": "RASHID ALTAF MUHAMMED ALTAF"
+    },
+    "KRISHNA KUMAR RAMJIT PRASAD": {
+        "role": "ASST PLUMBER",
+        "reports_to": "RASHID ALTAF MUHAMMED ALTAF"
+    },
+    "MANNU SAH UMESHWAR SAH": {
+        "role": "ASST PLUMBER",
+        "reports_to": "RASHID ALTAF MUHAMMED ALTAF"
+    },
+    "SANJEET KUMAR SAH GORAK SAH": {
+        "role": "ASST PLUMBER",
+        "reports_to": "RASHID ALTAF MUHAMMED ALTAF"
+    },
+    "SANT KUMAR YADAV DHAYNI YADAV": {
+        "role": "ASST PLUMBER",
+        "reports_to": "ERIC SARFO"
+    },
+    "RABE ALAM SAMMAHAMAD SAH": {
+        "role": "HELPER",
+        "reports_to": "ERIC SARFO"
+    },
+    "OM PRAKASH KUMAR RAMDHAN SAH": {
+        "role": "HELPER",
+        "reports_to": "ERIC SARFO"
+    },
+    "IZHAR HUSAIN MOHAMAD AGARE HUSAIN": {
+        "role": "HELPER",
+        "reports_to": "ERIC SARFO"
+    },
+    "SANDEEP SINGH PARASHNATH SINGH": {
+        "role": "HELPER",
+        "reports_to": "ERIC SARFO"
+    },
+    "SAIF ALI HATIM ALI": {
+        "role": "HELPER",
+        "reports_to": "SAHADEB JENA"
+    },
+    "MD JABBAR ALAM MD YASHIN ANSARI": {
+        "role": "HELPER",
+        "reports_to": "SAHADEB JENA"
+    },
+    "SARFARAZ KHAN GULAM RASUL KHAN": {
+        "role": "HELPER",
+        "reports_to": "SAHADEB JENA"
+    },
+    "SANJAY KUMAR DHRUP PRASAD": {
+        "role": "HELPER",
+        "reports_to": "SAHADEB JENA"
+    },
+    "ANISH KUMAR PANDEY JITENDRA PANDEY": {
+        "role": "HELPER",
+        "reports_to": "RAJ KISORE SWAIN BRAJA KISHORE SWAIN"
+    },
+    "BABAR ALI JAMARUDDIN ANSARI": {
+        "role": "HELPER",
+        "reports_to": "RAJ KISORE SWAIN BRAJA KISHORE SWAIN"
+    },
+    "MICHAEL APPIAH": {
+        "role": "HELPER",
+        "reports_to": "RAJ KISORE SWAIN BRAJA KISHORE SWAIN"
+    },
+    "MANOJKUMAR RAMACHANDRAN PILLAI": {
+        "role": "CHW Supervisor",
+        "reports_to": null
+    },
+    "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR": {
+        "role": "CHW C/H",
+        "reports_to": "MANOJKUMAR RAMACHANDRAN PILLAI"
+    },
+    "RAJA BABU SHAMBHU YADAV": {
+        "role": "ASST PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "MOHAMMAD AFTAB ALAM MOHAMMAD KHURSHID": {
+        "role": "PIPE TECHNICIAN",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "MOHAMMAD DANISH MOHAMMAD KAMALUDDIN": {
+        "role": "ASST PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "SHAHBAZ AHMAD": {
+        "role": "PIPE TECHNICIAN",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "MUKESH KUMAR YADAV RAMYASH YADAV": {
+        "role": "AC HELPER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "NAWEED AKHTAR": {
+        "role": "ASST AC /TECH",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "AASIF RAJA": {
+        "role": "HELPER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "MOHAMMAD NASIM SERAJUL ANSARI": {
+        "role": "ASST AC /TECH",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "JAYARAM RAM RAMBRIKSHA RAM": {
+        "role": "PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "SURENDRA DAS LACHHAN RAM": {
+        "role": "PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "RAJU KUMAR YADAV TAPPE YADAV": {
+        "role": "PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "SOHAIL ALI CHHOTE ALI SAH": {
+        "role": "PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "SANJAY KUMAR KALINDER": {
+        "role": "PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "RAJU KUMAR SINGH ACHHAYLAL SINGH": {
+        "role": "PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "SHAHID ALAM NOORHASAN MIYAN": {
+        "role": "CHW",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "RAKESH RANJAN LALBABU SINGH": {
+        "role": "PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "HARKESH KUMAR RAJESH PRASAD": {
+        "role": "WELDER",
+        "reports_to": null
+    },
+    "RAJA KUMAR VIRENDRA YADAV": {
+        "role": "ASST PIPE FITTER",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "MOHAMMED AJAS SHAJAHAN": {
+        "role": "PIPE TECHNICIAN",
+        "reports_to": "HARISH KUMAR POKKATTAYATHU GANGADHARAN NAIR"
+    },
+    "MOHAMED RAKIBUDDIN MOLLA MD": {
+        "role": "Ducting Supervisor",
+        "reports_to": null
+    },
+    "SEBASTIAN KALANGARA JOSEPH JOSEPH": {
+        "role": "GENERAL FOREMAN",
+        "reports_to": null
+    },
+    "MOHAMMED SWAPAN": {
+        "role": "HVAC CHARGE HAND",
+        "reports_to": "MOHAMED RAKIBUDDIN MOLLA MD"
+    },
+    "HABIB SHAIKH ABDUL AZIZ": {
+        "role": "Ducting C/H",
+        "reports_to": "MOHAMED RAKIBUDDIN MOLLA MD"
+    },
+    "ALGIR SHAIKH AGIGUL": {
+        "role": "DUCTMAN",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "RAFIK KHAN": {
+        "role": "DUCTMAN",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "SAHADAT KHAN EAR ALI KHAN": {
+        "role": "HELPER",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "ARAFAT HOSEN MOLLICK": {
+        "role": "HELPER",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "RIYAZ MONDAL ASRAF MONDAL": {
+        "role": "HELPER",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "BALAI DAS NITAI DAS": {
+        "role": "HELPER",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "SUJIT MONDAL PRASANTA MONDAL": {
+        "role": "HELPER",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "SEKH RIYAJUL SEKH RAJU": {
+        "role": "HELPER",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "ABDULLAH RAHIM": {
+        "role": "HELPER",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "HABIB SEKH KHALIL MALLIK": {
+        "role": "INSULATOR",
+        "reports_to": "HABIB SHAIKH ABDUL AZIZ"
+    },
+    "ABDUL HAKIM SEKH SALAM SEKH": {
+        "role": "ASST DUCTMAN",
+        "reports_to": "ALGIR SHAIKH AGIGUL"
+    },
+    "MOBARAK MALLICK GIYAS UDDIN MALLICK": {
+        "role": "ASST DUCTMAN",
+        "reports_to": "ALGIR SHAIKH AGIGUL"
+    },
+    "SOUMYADIP JANA": {
+        "role": "ASST DUCTMAN",
+        "reports_to": "ALGIR SHAIKH AGIGUL"
+    },
+    "SHAFEEK SHANADEEN": {
+        "role": "Project manager",
+        "reports_to": null
+    },
+    "Mansoor": {
+        "role": "Document Controller",
+        "reports_to": "SHAFEEK SHANADEEN"
+    },
+    "Jay Prakash": {
+        "role": "Project Engineer  (Ele)",
+        "reports_to": "SHAFEEK SHANADEEN"
+    },
+    "SUBIN": {
+        "role": "Project Engineer  (Mech)",
+        "reports_to": "SHAFEEK SHANADEEN"
+    },
+    "Chikku": {
+        "role": "Site Engineer (Mech)",
+        "reports_to": "SUBIN"
+    },
+    "Sminu": {
+        "role": "Site Engineer (Ele)",
+        "reports_to": "Jay Prakash"
+    },
+    "Vishal": {
+        "role": "Ele Eng Site",
+        "reports_to": "Jay Prakash"
+    },
+    "ABHINAND SATHEESAN": {
+        "role": "JR. MECHANICAL ENGINEER",
+        "reports_to": "Chikku"
+    },
+    "MOHAMEED SALIM": {
+        "role": "HSE Officer",
+        "reports_to": "SHAFEEK SHANADEEN"
+    },
+    "PACKEER MOHAMED": {
+        "role": "Store Keeper",
+        "reports_to": "SHAFEEK SHANADEEN"
+    },
+    "BINU VARGHESE": {
+        "role": "Store Keeper",
+        "reports_to": "SHAFEEK SHANADEEN"
+    }
+}
